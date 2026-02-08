@@ -1,4 +1,13 @@
+import { imageManifest } from "./imageManifest";
+
 export type Comestibilidad = "comestible" | "tóxica" | "sin interés" | "desconocida";
+
+const COMESTIBILIDAD_ORDER: Record<Comestibilidad, number> = {
+  comestible: 0,
+  tóxica: 1,
+  "sin interés": 2,
+  desconocida: 3,
+};
 
 export type Mushroom = {
   id: string;
@@ -9,14 +18,29 @@ export type Mushroom = {
   epoca: string[];
   rasgos: string[];
   descripcionCorta: string;
+  /** Regiones o zonas de España donde se puede encontrar */
+  zonas?: string[];
+  /** Nombres que recibe esta seta en distintas zonas de España */
+  nombresEnEspana?: string[];
+  /** Solo para comestibles: nivel de calidad gastronómica */
+  calidadCulinaria?: "excelente" | "muy buena" | "buena" | "aceptable";
+  /** Solo para comestibles: formas recomendadas de consumo */
+  consumoRecomendado?: string[];
+  /** Solo para comestibles: propiedades nutricionales o culinarias */
+  propiedades?: string[];
   confusiones?: string[];
   precauciones?: string[];
   imagenes: Array<{ src: string; alt: string }>;
 };
 
-/** Rutas locales: añade las fotos en public/images/<id>/01.jpg, 02.jpg, etc. */
-function img(id: string, num: number, alt: string) {
-  return { src: `/images/${id}/${String(num).padStart(2, "0")}.jpg`, alt };
+/** Imágenes desde la carpeta public/images/<id>/ (se actualizan con npm run dev / build) */
+function getImagenesFromManifest(id: string, nombreComun: string): Array<{ src: string; alt: string }> {
+  const files = imageManifest[id];
+  if (!files || files.length === 0) return [];
+  return files.map((file) => ({
+    src: `/images/${id}/${file}`,
+    alt: `${nombreComun} – ${file}`,
+  }));
 }
 
 export const MUSHROOMS: Mushroom[] = [
@@ -29,9 +53,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero rojo con verrugas blancas", "láminas blancas", "anillo", "base bulbosa"],
     descripcionCorta: "Muy llamativa. Tóxica. A menudo asociada a coníferas y abedules.",
+    zonas: ["Pirineos", "Cataluña", "País Vasco", "Navarra", "Castilla y León", "Cordillera Cantábrica"],
+    nombresEnEspana: ["Matamoscas", "Falsa oronja", "Reig", "Amanita falsa", "Seta de los enanitos"],
     confusiones: ["Amanita caesarea (comestible, sombrero naranja sin verrugas)", "Amanita phalloides (mortal)"],
     precauciones: ["No consumir. Puede causar intoxicación grave."],
-    imagenes: [img("amanita-muscaria", 1, "Amanita muscaria en el bosque"), img("amanita-muscaria", 2, "Detalle del sombrero")],
+    imagenes: [],
   },
   {
     id: "boletus-edulis",
@@ -42,9 +68,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "finales de verano"],
     rasgos: ["tubos/poros (no láminas)", "pie robusto", "carne blanca"],
     descripcionCorta: "Excelente comestible. Rey de las setas en muchas zonas.",
+    zonas: ["Castilla y León", "Cataluña", "Navarra", "País Vasco", "Galicia", "Aragón", "Pirineos"],
+    nombresEnEspana: ["Boleto", "Cep", "Calabaza", "Porcini", "Hong blanco", "Onddo zuri", "Cep de Bordeaux"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Salteado", "A la plancha", "Seco (deshidratado)", "En risotto", "Con arroz", "En conserva (aceite)"],
+    propiedades: ["Una de las setas más apreciadas del mundo. Aroma avellanado y dulce.", "Carne compacta y tierna.", "Rico en proteínas, fibra, vitaminas B y D.", "Bajo en calorías. Se conserva muy bien seca."],
     confusiones: ["Boletus satanas (tóxico, pie rojizo)", "Tylopilus felleus (amargo)"],
     precauciones: ["Asegura identificación. Evita ejemplares muy maduros."],
-    imagenes: [{ src: "/images/boletus-edulis/01.jpeg", alt: "Boleto sobre hojarasca" }],
+    imagenes: [],
   },
   {
     id: "lactarius-deliciosus",
@@ -55,8 +86,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["látex naranja", "sombrero anaranjado con círculos", "verdín al manipular"],
     descripcionCorta: "Muy típico en pinares. El látex naranja es una buena pista.",
+    zonas: ["Cataluña", "Castilla y León", "Aragón", "Navarra", "Madrid", "Sistema Central"],
+    nombresEnEspana: ["Níscalo", "Rovellón", "Rovelló", "Níscalo", "Mízcalo", "Guíscano", "Lactario delicioso"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["A la plancha", "Salteado con ajo y perejil", "En guisos", "Revuelto", "En arroz"],
+    propiedades: ["Sabor intenso y aroma terroso. Muy apreciado en la península.", "Textura firme y carnosa.", "Rico en proteínas y minerales.", "Puede teñir de verde el plato al cocinar (normal)."],
     confusiones: ["Lactarius torminosus (tóxico, látex blanco)", "Otros Lactarius con látex no naranja"],
-    imagenes: [img("lactarius-deliciosus", 1, "Níscalo en pinar")],
+    imagenes: [],
   },
   {
     id: "amanita-phalloides",
@@ -67,9 +103,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "finales de verano"],
     rasgos: ["sombrero verde a blanquecino", "láminas blancas", "anillo", "volva en saco"],
     descripcionCorta: "Mortal. La intoxicación más grave en España. Nunca consumir.",
+    zonas: ["Toda la península", "Cataluña", "Castilla y León", "País Vasco", "Galicia", "Andalucía"],
+    nombresEnEspana: ["Oronja verde", "Cicuta verde", "Hongo de la muerte", "Amanita faloides"],
     confusiones: ["Amanita caesarea (comestible)", "Agaricus (láminas rosadas a marrón)"],
     precauciones: ["Setas mortales. Una sola puede ser letal."],
-    imagenes: [img("amanita-phalloides", 1, "Oronja verde"), img("amanita-phalloides", 2, "Detalle base")],
+    imagenes: [],
   },
   {
     id: "cantharellus-cibarius",
@@ -80,8 +118,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero amarillo huevo", "falsas láminas en pliegues", "olor afrutado"],
     descripcionCorta: "Muy apreciada. Crece en grupos. Olor a albaricoque.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Castilla y León", "Galicia", "Pirineos"],
+    nombresEnEspana: ["Rebozuelo", "Seta de San Juan", "Rossinyol", "Anacate", "Zizahori", "Cabrilla"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Salteado", "A la plancha", "En guisos", "Salsas", "Seco. Olor afrutado (albaricoque)."],
+    propiedades: ["Sabor suave y delicado. Olor característico a albaricoque.", "Textura carnosa. Muy versátil en cocina.", "Rico en vitamina D y betacarotenos.", "Bajo en calorías. Crece en grupos, fácil de recolectar."],
     confusiones: ["Hygrophoropsis aurantiaca (falsa)", "Omphalotus (tóxico)"],
-    imagenes: [img("cantharellus-cibarius", 1, "Rebozuelo"), img("cantharellus-cibarius", 2, "Grupo")],
+    imagenes: [],
   },
   {
     id: "amanita-caesarea",
@@ -92,9 +135,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero naranja sin verrugas", "láminas y pie amarillos", "anillo colgante", "volva en saco"],
     descripcionCorta: "Excelente comestible. No confundir con otras amanitas.",
+    zonas: ["Cataluña", "Aragón", "Castilla-La Mancha", "Extremadura", "Andalucía", "Comunidad Valenciana", "Baleares"],
+    nombresEnEspana: ["Oronja", "Amanita de los césares", "Oronja verdadera", "Reig de soca", "Cucumelo", "Ou de reig"],
     confusiones: ["Amanita muscaria (tóxica, con verrugas)", "Amanita phalloides (mortal)"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Cruda en carpaccio", "A la plancha", "Salteada con ajo", "Revuelto", "En arroz y pasta"],
+    propiedades: ["Considerada la reina de las setas en el Mediterráneo. Una de las pocas que se puede comer cruda.", "Sabor delicado, dulce y ligeramente a nuez. Textura tierna.", "Proteínas, vitaminas B y D, fósforo, potasio.", "Propiedades antioxidantes. Siempre identificar con seguridad."],
     precauciones: ["Identificación segura. No consumir si hay duda."],
-    imagenes: [img("amanita-caesarea", 1, "Oronja")],
+    imagenes: [],
   },
   {
     id: "calocybe-gambosa",
@@ -105,8 +153,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera"],
     rasgos: ["sombrero blanco a crema", "láminas blancas muy apretadas", "olor harinoso"],
     descripcionCorta: "Muy buscada en primavera. Crece en círculos o grupos.",
+    zonas: ["País Vasco", "Navarra", "Cataluña", "Castilla y León", "La Rioja", "Cantabria"],
+    nombresEnEspana: ["Perrechico", "Seta de San Jorge", "Perretxiko", "Mozcorra", "Seta de abril"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Salteado", "Revuelto", "En tortilla", "Guisos", "Rebozado. Olor harinoso característico."],
+    propiedades: ["Muy buscada en primavera. Sabor y aroma harinosos suaves.", "Carne blanca y tierna.", "Rico en proteínas y minerales.", "Crece en círculos (corros de brujas)."],
     confusiones: ["Entoloma lividum (tóxico, láminas rosadas)", "Clitocybe (algunas tóxicas)"],
-    imagenes: [img("calocybe-gambosa", 1, "Perrechico")],
+    imagenes: [],
   },
   {
     id: "macrolepiota-procera",
@@ -117,8 +170,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "verano"],
     rasgos: ["sombrero grande con escamas marrones", "anillo doble móvil", "pie con dibujo de serpiente"],
     descripcionCorta: "Solo el sombrero se consume (pie fibroso). Muy apreciada.",
+    zonas: ["Toda la península", "Castilla y León", "Cataluña", "Madrid", "Galicia", "Andalucía"],
+    nombresEnEspana: ["Parasol", "Galamperna", "Matacandil", "Apagador", "Parasol de campo"],
+    calidadCulinaria: "muy buena",
+    consumoRecomendado: ["Solo el sombrero: a la plancha", "Rebozado", "En guisos. El pie es fibroso; desechar o usar para caldo."],
+    propiedades: ["Textura carnosa y sabrosa. Sabor suave a avellana.", "Rico en proteínas y fibra.", "Bajo en calorías. Sombrero grande, ideal para rebozar."],
     confusiones: ["Lepiota venenosa (más pequeña)", "Chlorophyllum molybdites (esporas verdes)"],
-    imagenes: [img("macrolepiota-procera", 1, "Parasol")],
+    imagenes: [],
   },
   {
     id: "pleurotus-eryngii",
@@ -129,8 +187,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "primavera"],
     rasgos: ["sombrero en forma de oreja", "pie excéntrico", "carne blanca firme"],
     descripcionCorta: "Muy valorada. Crece sobre cardos y restos de umbelíferas.",
+    zonas: ["Castilla y León", "Madrid", "Castilla-La Mancha", "Extremadura", "Andalucía", "Aragón"],
+    nombresEnEspana: ["Seta de cardo", "Seta de cardo corredor", "Gurumelo de cardo"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Salteada", "En guisos", "Sopas", "Arroces. Carne firme que aguanta bien la cocción."],
+    propiedades: ["Una de las setas más valoradas. Textura firme y sabor intenso.", "Rico en proteínas. Crece sobre cardos (raíces).", "Aguanta bien la congelación y el secado."],
     confusiones: ["Pleurotus ostreatus (seta de ostra, sobre madera)"],
-    imagenes: [img("pleurotus-eryngii", 1, "Seta de cardo")],
+    imagenes: [],
   },
   {
     id: "marasmius-oreades",
@@ -141,8 +204,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera", "otoño"],
     rasgos: ["sombrero acampanado color crema", "láminas separadas", "pie duro y fibroso"],
     descripcionCorta: "Pequeña y aromática. Crece en círculos de brujas.",
+    zonas: ["Toda la península", "Castilla y León", "Galicia", "Cataluña", "Meseta Norte"],
+    nombresEnEspana: ["Senderuela", "Carraspina", "Senderilla", "Rellana", "Seta de corro"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["Seco (conserva el aroma)", "En sopas", "Guisos", "Revueltos. Pie duro; solo sombrero o triturar."],
+    propiedades: ["Aroma intenso que se potencia al secar. Muy aromática.", "Pequeña; se usa mucho deshidratada como condimento.", "Rico en minerales. Crece en círculos en prados."],
     confusiones: ["Collybia (no comestibles)", "Marasmius (otras especies)"],
-    imagenes: [img("marasmius-oreades", 1, "Senderuela")],
+    imagenes: [],
   },
   {
     id: "pleurotus-ostreatus",
@@ -150,11 +218,16 @@ export const MUSHROOMS: Mushroom[] = [
     nombreCientifico: "Pleurotus ostreatus",
     comestibilidad: "comestible",
     habitat: ["troncos", "madera muerta", "chopos", "sauces"],
-    epoca: ["otoño", "invierno"],
+    epoca: ["otoño", "invierno", "todo el año"],
     rasgos: ["sombrero en abanico", "láminas blancas decurrentes", "sin anillo"],
-    descripcionCorta: "Crece en grupos sobre madera. También cultivada.",
+    descripcionCorta: "Crece en grupos sobre madera. También cultivada. En zonas suaves puede verse todo el año.",
+    zonas: ["Cataluña", "País Vasco", "Galicia", "Castilla y León", "Toda la península"],
+    nombresEnEspana: ["Seta de ostra", "Gírgola", "Orellana", "Seta de chopo"],
+    calidadCulinaria: "muy buena",
+    consumoRecomendado: ["Salteada", "A la plancha", "En revueltos", "Sopas", "Pasta. También cultivada."],
+    propiedades: ["Textura suave y sabor suave. Muy versátil.", "Rico en proteínas, vitaminas B y D.", "Puede verse todo el año en zonas suaves. Bajo en calorías."],
     confusiones: ["Pleurotus pulmonarius (más clara)", "Lentinus (pie más duro)"],
-    imagenes: [img("pleurotus-ostreatus", 1, "Seta de ostra")],
+    imagenes: [],
   },
   {
     id: "agaricus-campestris",
@@ -165,8 +238,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera", "otoño"],
     rasgos: ["sombrero blanco que ennegrece", "láminas rosadas luego marrones", "anillo simple"],
     descripcionCorta: "Muy conocida. No confundir con Agaricus tóxicos (olor a tinta, amarilleo).",
+    zonas: ["Toda la península", "Castilla y León", "Galicia", "Cataluña", "Meseta"],
+    nombresEnEspana: ["Champiñón de prado", "Champiñón silvestre", "Bola de nieve", "Seta de prado"],
+    calidadCulinaria: "muy buena",
+    consumoRecomendado: ["A la plancha", "Salteado", "En guisos", "Revuelto. Sabor suave, similar al champiñón cultivado."],
+    propiedades: ["Sabor delicado. Una de las setas silvestres más seguras de identificar (láminas rosadas que ennegrecen).", "Rico en proteínas y potasio.", "Bajo en calorías. Crece en prados y pastizales."],
     confusiones: ["Agaricus xanthodermus (tóxico, base amarilla)", "Amanita (blancas mortales)"],
-    imagenes: [img("agaricus-campestris", 1, "Champiñón de prado")],
+    imagenes: [],
   },
   {
     id: "hydnum-repandum",
@@ -177,8 +255,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero crema a anaranjado", "espinas bajo el sombrero (no láminas)", "pie corto"],
     descripcionCorta: "Buen comestible. Fácil de reconocer por las espinas.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Lengua de gato", "Gamuza", "Lengua de vaca (en algunas zonas)", "Pinatell"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["Salteado", "En guisos", "Sopas", "Con arroz. Las espinas bajo el sombrero son características."],
+    propiedades: ["Sabor suave, algo dulce. Textura firme.", "Rico en fibra y minerales.", "Fácil de reconocer por las espinas en lugar de láminas."],
     confusiones: ["Hydnum rufescens (más pequeño)", "Sarcodon (amargas)"],
-    imagenes: [img("hydnum-repandum", 1, "Lengua de gato")],
+    imagenes: [],
   },
   {
     id: "craterellus-cornucopioides",
@@ -189,8 +272,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["forma de trompeta negra", "sin láminas", "hueco interior", "superficie grisácea"],
     descripcionCorta: "Excelente. Seca muy bien. Crece en grupos.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Galicia", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Trompeta de los muertos", "Trufa de pobre", "Trompeta negra", "Corneta"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Seco (ideal; concentra el sabor)", "En polvo como condimento", "Arroces", "Guisos", "Salsas"],
+    propiedades: ["Sabor intenso, a veces comparado con la trufa. Excelente seca.", "Muy aromática. Carne fina, se deshidrata muy bien.", "Rico en minerales. Bajo en calorías.", "Conservar en aceite o en polvo tras secar."],
     confusiones: ["Craterellus cinereus (similar)", "Pseudocraterellus (más pequeño)"],
-    imagenes: [img("craterellus-cornucopioides", 1, "Trompeta de los muertos")],
+    imagenes: [],
   },
   {
     id: "lepista-nuda",
@@ -201,8 +289,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero y láminas lilas o azuladas", "pie violáceo", "olor suave"],
     descripcionCorta: "Buen comestible. Color característico. Cocinarla siempre.",
+    zonas: ["Cataluña", "País Vasco", "Galicia", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Pie azul", "Lepista", "Seta de pie azul", "Lepista nudista"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["Siempre cocinada (nunca cruda)", "Salteada", "En guisos", "Revuelto", "Risotto"],
+    propiedades: ["Color violáceo característico. Sabor suave.", "Rico en proteínas y antioxidantes.", "Debe cocinarse; cruda puede sentar mal."],
     confusiones: ["Cortinarius (algunos tóxicos, cortina)", "Lepista saeva (pie blanco)"],
-    imagenes: [img("lepista-nuda", 1, "Pie azul")],
+    imagenes: [],
   },
   {
     id: "boletus-aereus",
@@ -213,8 +306,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "verano"],
     rasgos: ["sombrero muy oscuro", "poros blancos luego amarillentos", "pie robusto reticulado"],
     descripcionCorta: "Excelente. Muy valorado en el Mediterráneo.",
+    zonas: ["Cataluña", "Aragón", "Castilla-La Mancha", "Extremadura", "Andalucía", "Comunidad Valenciana"],
+    nombresEnEspana: ["Boleto negro", "Bronceado", "Hong negre", "Cep negro", "Porcini negro"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["A la plancha", "Salteado", "Seco", "En risotto", "Guisos. Muy valorado en el Mediterráneo."],
+    propiedades: ["Sombrero muy oscuro. Sabor y textura similares al Boletus edulis.", "Rico en proteínas y minerales.", "Una de las setas más cotizadas en Cataluña y Levante."],
     confusiones: ["Boletus edulis (sombrero más claro)", "Boletus satanas (tóxico, poros rojos)"],
-    imagenes: [img("boletus-aereus", 1, "Boleto negro")],
+    imagenes: [],
   },
   {
     id: "russula-cyanoxantha",
@@ -225,8 +323,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero verde a violeta", "láminas flexibles que no se rompen", "sin anillo"],
     descripcionCorta: "Buen comestible. Las láminas no se quiebran al pasar el dedo.",
+    zonas: ["Cataluña", "País Vasco", "Castilla y León", "Galicia", "Pirineos"],
+    nombresEnEspana: ["Pardilla", "Russula comestible", "Pardella", "Xixa"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["A la plancha", "Salteada", "En guisos. Las láminas no se rompen al pasar el dedo (pista)."],
+    propiedades: ["Sabor suave. Textura firme. Sombrero en tonos verde/violeta.", "Rico en fibra y minerales.", "Identificación: láminas flexibles, no quebradizas."],
     confusiones: ["Otras Russula (algunas amargas o tóxicas)", "Russula virescens (verde con grietas)"],
-    imagenes: [img("russula-cyanoxantha", 1, "Pardilla")],
+    imagenes: [],
   },
   {
     id: "russula-virescens",
@@ -237,9 +340,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero verde con grietas tipo cuero", "láminas blancas", "carne blanca"],
     descripcionCorta: "Muy apreciada. Fácil de reconocer por el sombrero agrietado.",
+    zonas: ["Cataluña", "Aragón", "Castilla-La Mancha", "Extremadura", "Andalucía"],
+    nombresEnEspana: ["Russula verde", "Verde veteado", "Bunyol", "Pera de cuco"],
     confusiones: ["Russula cyanoxantha (sin grietas)", "Amanita phalloides (mortal, anillo y volva)"],
+    calidadCulinaria: "muy buena",
+    consumoRecomendado: ["Salteada", "A la plancha", "En guisos. Sombrero agrietado tipo cuero, muy característico."],
+    propiedades: ["Sabor suave y textura tierna. Muy apreciada.", "Rico en proteínas. Fácil de reconocer por el verde veteado."],
     precauciones: ["No confundir con amanitas. Russula no tiene anillo ni volva."],
-    imagenes: [img("russula-virescens", 1, "Russula verde")],
+    imagenes: [],
   },
   {
     id: "tricholoma-portentosum",
@@ -250,8 +358,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero gris con tonos amarillos", "láminas amarillentas", "pie blanco"],
     descripcionCorta: "Buen comestible en pinares. Olor harinoso suave.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Castilla y León", "Aragón"],
+    nombresEnEspana: ["Negrilla", "Carbonera", "Negreta", "Fredolic negre"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["Salteado", "En guisos", "Revuelto. Olor harinoso suave. Típico de pinares."],
+    propiedades: ["Sabor suave. Rico en proteínas y minerales.", "Crece en pinares en otoño."],
     confusiones: ["Tricholoma terreum (comestible con precaución)", "Otros Tricholoma grises"],
-    imagenes: [img("tricholoma-portentosum", 1, "Negrilla")],
+    imagenes: [],
   },
   {
     id: "coprinus-comatus",
@@ -262,9 +375,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera", "otoño"],
     rasgos: ["sombrero alto con escamas", "láminas que se licúan en negro", "consumir joven"],
     descripcionCorta: "Buen comestible solo cuando es joven y blanco. No mezclar con alcohol.",
+    zonas: ["Toda la península", "Castilla y León", "Galicia", "Cataluña", "Madrid"],
+    nombresEnEspana: ["Barbuda", "Coprino", "Seta de tinta (cuando ennegrece)", "Matacandil pequeño"],
     confusiones: ["Coprinus atramentarius (tóxico con alcohol)", "Otros coprinos"],
+    calidadCulinaria: "aceptable",
+    consumoRecomendado: ["Solo ejemplares muy jóvenes (blancos, sin ennegrecer). Salteado", "Revuelto. No mezclar con alcohol."],
+    propiedades: ["Sabor suave. Las láminas se licúan en negro al madurar; solo consumir jóvenes.", "Rico en fibra. No consumir con alcohol (reacción tipo antabus)."],
     precauciones: ["No consumir con alcohol. Recolectar solo ejemplares muy jóvenes."],
-    imagenes: [img("coprinus-comatus", 1, "Barbuda")],
+    imagenes: [],
   },
   {
     id: "armillaria-mellea",
@@ -275,9 +393,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero miel con escamas", "anillo", "crece en grupos sobre madera"],
     descripcionCorta: "Comestible cocinada. Puede sentar mal si está cruda o en mal estado.",
+    zonas: ["Toda la península", "Cataluña", "Galicia", "Castilla y León", "País Vasco"],
+    nombresEnEspana: ["Armillaria", "Seta de miel", "Armilaria", "Seta de pie"],
     confusiones: ["Pholiota (anillo fugaz)", "Hypholoma (tóxicos)"],
+    calidadCulinaria: "aceptable",
+    consumoRecomendado: ["Bien cocinada", "En guisos", "Sopas. Desechar el pie, duro y fibroso."],
+    propiedades: ["Sabor suave. Puede sentar mal si está cruda o en mal estado.", "Rico en minerales. Crece en grupos sobre madera."],
     precauciones: ["Siempre bien cocinada. Desechar el pie duro."],
-    imagenes: [img("armillaria-mellea", 1, "Armillaria")],
+    imagenes: [],
   },
   {
     id: "fistulina-hepatica",
@@ -288,8 +411,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["forma de lengua rojiza", "tubos separados", "carne que exuda líquido rojo"],
     descripcionCorta: "Joven es comestible. Crece sobre árboles vivos.",
+    zonas: ["País Vasco", "Navarra", "Cataluña", "Castilla y León", "Galicia"],
+    nombresEnEspana: ["Lengua de vaca", "Hígado de buey", "Ostalaza", "Bistec de pobre"],
+    calidadCulinaria: "buena",
+    consumoRecomendado: ["Joven: salteada", "En guisos. Exuda un líquido rojizo al cortar; no preocupante."],
+    propiedades: ["Textura carnosa. Crece sobre robles y castaños vivos.", "Rico en minerales. Consumir ejemplares jóvenes."],
     confusiones: ["Otros políporos (diferente hábitat y textura)"],
-    imagenes: [img("fistulina-hepatica", 1, "Lengua de vaca")],
+    imagenes: [],
   },
   {
     id: "morchella-esculenta",
@@ -300,9 +428,14 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera"],
     rasgos: ["sombrero con celdas tipo panal", "hueco", "pie blanco"],
     descripcionCorta: "Muy apreciada. Siempre consumir cocinada (tóxica cruda).",
+    zonas: ["Castilla y León", "Navarra", "Aragón", "Cataluña", "La Rioja", "Sistema Ibérico"],
+    nombresEnEspana: ["Colmenilla", "Morilla", "Cagarria", "Múrgola", "Morilla redonda"],
     confusiones: ["Morchella elata (similar)", "Gyromitra (tóxica, cerebro no celdas)"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Siempre cocinada (tóxica cruda)", "Salteada", "En cremas", "Risotto", "Seco. Aroma intenso."],
+    propiedades: ["Una de las setas más apreciadas. Sabor y aroma intensos.", "Rico en proteínas y minerales. Celdas tipo panal en el sombrero.", "Solo consumir cocinada; cruda es tóxica."],
     precauciones: ["Nunca consumir cruda. Siempre bien cocinada."],
-    imagenes: [img("morchella-esculenta", 1, "Colmenilla")],
+    imagenes: [],
   },
   {
     id: "tuber-melanosporum",
@@ -313,8 +446,13 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["invierno"],
     rasgos: ["tuberculo subterráneo", "superficie negra con verrugas", "interior marmóreo"],
     descripcionCorta: "Reina de la gastronomía. Se busca con perros o jabalíes.",
+    zonas: ["Aragón", "Cataluña", "Castilla y León", "Teruel", "Soria", "Huesca", "Zaragoza"],
+    nombresEnEspana: ["Trufa negra", "Trufa de Perigord", "Trufa de invierno", "Tuber"],
+    calidadCulinaria: "excelente",
+    consumoRecomendado: ["Rallada o en láminas sobre pasta", "Arroz", "Huevos", "Mantequilla. No cocinar mucho para no perder aroma."],
+    propiedades: ["Reina de la gastronomía. Aroma y sabor únicos.", "Tuberculo subterráneo; se busca con perros. Rico en proteínas y minerales.", "Muy valorada en cocina. Mejor en crudo o poco cocinada."],
     confusiones: ["Tuber brumale (menos valor)", "Tuber indicum (importada)"],
-    imagenes: [img("tuber-melanosporum", 1, "Trufa negra")],
+    imagenes: [],
   },
   {
     id: "amanita-verna",
@@ -325,9 +463,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera", "verano"],
     rasgos: ["completamente blanca", "volva en saco", "anillo", "láminas blancas"],
     descripcionCorta: "Mortal. Muy peligrosa por confusión con setas blancas comestibles.",
+    zonas: ["Toda la península", "Castilla y León", "Cataluña", "Madrid", "Andalucía"],
+    nombresEnEspana: ["Oronja blanca", "Cicuta blanca", "Amanita de primavera"],
     confusiones: ["Agaricus campestris (láminas rosadas)", "Calocybe gambosa (olor harinoso)"],
     precauciones: ["Setas mortales. Nunca consumir setas blancas sin identificación experta."],
-    imagenes: [img("amanita-verna", 1, "Oronja blanca")],
+    imagenes: [],
   },
   {
     id: "amanita-virosa",
@@ -338,9 +478,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["blanca", "volva en saco", "olor desagradable", "láminas blancas"],
     descripcionCorta: "Mortal. Más frecuente en el norte de España.",
+    zonas: ["País Vasco", "Navarra", "Cataluña", "Galicia", "Cordillera Cantábrica", "Pirineos"],
+    nombresEnEspana: ["Oronja fétida", "Ángel destructor", "Amanita virosa"],
     confusiones: ["Amanita verna (similar)", "Setas blancas comestibles"],
     precauciones: ["Setas mortales. Evitar toda seta blanca con volva."],
-    imagenes: [img("amanita-virosa", 1, "Oronja fétida")],
+    imagenes: [],
   },
   {
     id: "lepiota-brunneoincarnata",
@@ -351,9 +493,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero con escamas marrón rojizo", "anillo", "talla pequeña a media"],
     descripcionCorta: "Mortal. Crece en zonas urbanas. Muy peligrosa.",
+    zonas: ["Toda la península", "Cataluña", "Madrid", "Comunidad Valenciana", "Andalucía"],
+    nombresEnEspana: ["Lepiota mortal", "Lepiota venenosa pequeña"],
     confusiones: ["Macrolepiota procera (parasol, mucho más grande)", "Otras Lepiota"],
     precauciones: ["No consumir Lepiota pequeñas. Solo parasoles bien identificados."],
-    imagenes: [img("lepiota-brunneoincarnata", 1, "Lepiota mortal")],
+    imagenes: [],
   },
   {
     id: "galerina-marginata",
@@ -364,9 +508,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño", "primavera"],
     rasgos: ["sombrero marrón pequeño", "anillo fugaz", "láminas marrones", "sobre madera"],
     descripcionCorta: "Mortal. Contiene las mismas toxinas que la oronja verde.",
+    zonas: ["Cataluña", "País Vasco", "Galicia", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Galerina marginada", "Galerina de borde"],
     confusiones: ["Psilocybe (alucinógenas)", "Setas comestibles sobre madera"],
     precauciones: ["Setas mortales. No consumir setas pequeñas sobre madera sin identificar."],
-    imagenes: [img("galerina-marginata", 1, "Galerina marginada")],
+    imagenes: [],
   },
   {
     id: "entoloma-lividum",
@@ -377,9 +523,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero grisáceo grande", "láminas rosadas", "pie grueso"],
     descripcionCorta: "Tóxica. Intoxicación gastrointestinal grave.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Castilla y León", "Galicia"],
+    nombresEnEspana: ["Entoloma en sidra", "Entoloma lividum", "Entoloma de los prados"],
     confusiones: ["Calocybe gambosa (perrechico)", "Clitocybe nebularis"],
     precauciones: ["No consumir. Confusión frecuente con setas de primavera."],
-    imagenes: [img("entoloma-lividum", 1, "Entoloma lividum")],
+    imagenes: [],
   },
   {
     id: "gyromitra-esculenta",
@@ -390,9 +538,11 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["primavera"],
     rasgos: ["sombrero en forma de cerebro marrón", "no tiene celdas como morchella", "pie blanco"],
     descripcionCorta: "Tóxica. Puede ser mortal. No confundir con colmenillas.",
+    zonas: ["Navarra", "País Vasco", "Cataluña", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Bonete", "Falsa colmenilla", "Gyromitra", "Oreja de judas"],
     confusiones: ["Morchella (colmenilla, con celdas)", "Otras Gyromitra"],
     precauciones: ["No consumir. Tóxica incluso cocinada en algunos casos."],
-    imagenes: [img("gyromitra-esculenta", 1, "Bonete")],
+    imagenes: [],
   },
   {
     id: "boletus-satanas",
@@ -403,8 +553,10 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["verano", "otoño"],
     rasgos: ["sombrero blanco grisáceo", "poros rojos", "pie rojizo con retículo"],
     descripcionCorta: "Tóxica. Provoca vómitos intensos. No consumir.",
+    zonas: ["Cataluña", "Aragón", "Castilla-La Mancha", "Extremadura", "Andalucía", "Comunidad Valenciana"],
+    nombresEnEspana: ["Boleto de Satanás", "Boleto malo", "Hong del diable"],
     confusiones: ["Boletus edulis (poros blancos/oliva)", "Boletus aereus (sombrero oscuro)"],
-    imagenes: [img("boletus-satanas", 1, "Boleto de Satanás")],
+    imagenes: [],
   },
   {
     id: "hygrophoropsis-aurantiaca",
@@ -415,8 +567,10 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["naranja", "láminas decurrentes naranjas", "más frágil que rebozuelo"],
     descripcionCorta: "No es el rebozuelo. Comestibilidad discutida; mejor no consumir.",
+    zonas: ["Cataluña", "País Vasco", "Navarra", "Castilla y León", "Galicia"],
+    nombresEnEspana: ["Falsa seta de caballo", "Falso rebozuelo", "Rebozuelo falso"],
     confusiones: ["Cantharellus cibarius (rebozuelo, láminas en pliegues)"],
-    imagenes: [img("hygrophoropsis-aurantiaca", 1, "Falsa seta de caballo")],
+    imagenes: [],
   },
   {
     id: "clitocybe-nebularis",
@@ -427,8 +581,10 @@ export const MUSHROOMS: Mushroom[] = [
     epoca: ["otoño"],
     rasgos: ["sombrero gris claro", "láminas decurrentes", "olor fuerte"],
     descripcionCorta: "Comestibilidad discutida. Puede sentar mal. Mejor no consumir.",
+    zonas: ["Cataluña", "País Vasco", "Galicia", "Castilla y León", "Pirineos"],
+    nombresEnEspana: ["Neguilla", "Lepista nebularis", "Seta de humo", "Bruja"],
     confusiones: ["Lepista nuda (pie azul)", "Entoloma (tóxico)"],
-    imagenes: [img("clitocybe-nebularis", 1, "Neguilla")],
+    imagenes: [],
   },
 ];
 
@@ -439,6 +595,29 @@ export const COMESTIBILIDAD_OPTIONS: readonly Comestibilidad[] = [
   "desconocida",
 ] as const;
 
+export type CalidadCulinaria = "excelente" | "muy buena" | "buena" | "aceptable";
+export const CALIDAD_CULINARIA_OPTIONS: readonly CalidadCulinaria[] = [
+  "excelente",
+  "muy buena",
+  "buena",
+  "aceptable",
+] as const;
+
+/** Devuelve la seta con las imágenes de su carpeta (comestibles primero, luego no comestibles) */
+export function getMushrooms(): Mushroom[] {
+  return [...MUSHROOMS]
+    .sort((a, b) => COMESTIBILIDAD_ORDER[a.comestibilidad] - COMESTIBILIDAD_ORDER[b.comestibilidad])
+    .map((m) => ({
+      ...m,
+      imagenes: getImagenesFromManifest(m.id, m.nombreComun),
+    }));
+}
+
 export function getMushroomById(id: string): Mushroom | undefined {
-  return MUSHROOMS.find((m) => m.id === id);
+  const m = MUSHROOMS.find((x) => x.id === id);
+  if (!m) return undefined;
+  return {
+    ...m,
+    imagenes: getImagenesFromManifest(m.id, m.nombreComun),
+  };
 }

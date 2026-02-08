@@ -1,10 +1,18 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { COMESTIBILIDAD_OPTIONS, MUSHROOMS, type Comestibilidad, type Mushroom } from "../data/mushrooms";
+import {
+  CALIDAD_CULINARIA_OPTIONS,
+  COMESTIBILIDAD_OPTIONS,
+  getMushrooms,
+  type CalidadCulinaria,
+  type Comestibilidad,
+  type Mushroom,
+} from "../data/mushrooms";
 
 type Filters = {
   q: string;
   comestibilidad: "" | Comestibilidad;
+  calidad: "" | CalidadCulinaria;
   habitat: string;
   epoca: string;
 };
@@ -21,40 +29,54 @@ export default function Home() {
   const [filters, setFilters] = useState<Filters>({
     q: "",
     comestibilidad: "",
+    calidad: "",
     habitat: "",
-    epoca: ""
+    epoca: "",
   });
 
+  const mushrooms = useMemo(() => getMushrooms(), []);
+
   const habitatOptions = useMemo(() => {
-    const all = MUSHROOMS.flatMap((m) => m.habitat);
+    const all = mushrooms.flatMap((m) => m.habitat);
     return uniqueSorted(all);
-  }, []);
+  }, [mushrooms]);
 
   const epocaOptions = useMemo(() => {
-    const all = MUSHROOMS.flatMap((m) => m.epoca);
-    return uniqueSorted(all);
-  }, []);
+    const all = mushrooms.flatMap((m) => m.epoca);
+    const uniques = uniqueSorted(all.filter((e) => e !== "todo el año"));
+    uniques.unshift("todo el año");
+    return uniques;
+  }, [mushrooms]);
 
   const safeComestibilidad =
     filters.comestibilidad === "" || COMESTIBILIDAD_OPTIONS.includes(filters.comestibilidad)
       ? filters.comestibilidad
       : "";
 
+  const safeCalidad =
+    filters.calidad === "" || CALIDAD_CULINARIA_OPTIONS.includes(filters.calidad as CalidadCulinaria)
+      ? filters.calidad
+      : "";
+
   const results = useMemo(() => {
     const q = normalize(filters.q);
-    return MUSHROOMS.filter((m) => {
+    return mushrooms.filter((m) => {
       const matchesQuery =
         q.length === 0 ||
         normalize(m.nombreComun).includes(q) ||
-        normalize(m.nombreCientifico).includes(q);
+        normalize(m.nombreCientifico).includes(q) ||
+        (m.nombresEnEspana?.some((apodo) => normalize(apodo).includes(q)) ?? false);
       const matchesCom = safeComestibilidad === "" || m.comestibilidad === safeComestibilidad;
+      const matchesCalidad =
+        safeCalidad === "" ||
+        (m.comestibilidad === "comestible" && m.calidadCulinaria === safeCalidad);
       const matchesHab =
         filters.habitat === "" || m.habitat.some((h) => normalize(h) === normalize(filters.habitat));
       const matchesEpo =
         filters.epoca === "" || m.epoca.some((e) => normalize(e) === normalize(filters.epoca));
-      return matchesQuery && matchesCom && matchesHab && matchesEpo;
+      return matchesQuery && matchesCom && matchesCalidad && matchesHab && matchesEpo;
     });
-  }, [filters.q, filters.habitat, filters.epoca, safeComestibilidad]);
+  }, [mushrooms, filters.q, filters.habitat, filters.epoca, safeComestibilidad, safeCalidad]);
 
   return (
     <div className="pageHome">
@@ -76,7 +98,7 @@ export default function Home() {
               const value = String((e.target as HTMLInputElement | null)?.value ?? "");
               setFilters((f) => ({ ...f, q: value }));
             }}
-            placeholder="Ej.: níscalo, boletus, amanita…"
+            placeholder="Nombre, científico o apodo (ej.: rovellón, cep, perretxiko…)"
             autoComplete="off"
           />
         </div>
@@ -97,6 +119,27 @@ export default function Home() {
             {COMESTIBILIDAD_OPTIONS.map((v) => (
               <option key={v} value={v}>
                 {v}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field">
+          <label htmlFor="cal">Calidad (comestibles)</label>
+          <select
+            id="cal"
+            value={safeCalidad}
+            onChange={(e) => {
+              const v = String((e.target as HTMLSelectElement | null)?.value ?? "");
+              setFilters((f) => ({ ...f, calidad: (v === "" ? "" : v) as Filters["calidad"] }));
+            }}
+          >
+            <option value="">Cualquiera</option>
+            {CALIDAD_CULINARIA_OPTIONS.map((v) => (
+              <option key={v} value={v}>
+                {v === "excelente" && "Excelente"}
+                {v === "muy buena" && "Muy buena"}
+                {v === "buena" && "Buena"}
+                {v === "aceptable" && "Aceptable"}
               </option>
             ))}
           </select>
@@ -129,7 +172,7 @@ export default function Home() {
               setFilters((f) => ({ ...f, epoca: value }));
             }}
           >
-            <option value="">Todas</option>
+            <option value="">Cualquier época</option>
             {epocaOptions.map((v) => (
               <option key={v} value={v}>
                 {v}
@@ -142,7 +185,7 @@ export default function Home() {
       <hr className="sep" />
 
       <p className="small" aria-live="polite">
-        Mostrando <strong>{results.length}</strong> de <strong>{MUSHROOMS.length}</strong>
+        Mostrando <strong>{results.length}</strong> de <strong>{mushrooms.length}</strong>
       </p>
 
       <section className="grid" aria-label="Resultados">

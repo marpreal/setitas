@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- sombrero -->
+  <path d="M6 14c0-6 4-10 10-10s10 4 10 10v2H6v-2z" fill="#8B5E3C"/>
+  <path d="M6 14c0-6 4-10 10-10s10 4 10 10" stroke="#5D3A1A" stroke-width="1.2" fill="none"/>
+  <!-- manchas en el sombrero -->
+  <circle cx="10" cy="12" r="1.2" fill="#E8DCC8"/>
+  <circle cx="16" cy="10" r="1" fill="#E8DCC8"/>
+  <circle cx="22" cy="12" r="1.2" fill="#E8DCC8"/>
+  <!-- pie -->
+  <rect x="13" y="16" width="6" height="12" rx="1" fill="#E8DCC8"/>
+  <rect x="13.5" y="16" width="5" height="12" rx="0.8" stroke="#C4B59A" stroke-width="0.8" fill="none"/>
+  <!-- base -->
+  <ellipse cx="16" cy="28" rx="5" ry="2" fill="#D4C4A8"/>
+</svg>
