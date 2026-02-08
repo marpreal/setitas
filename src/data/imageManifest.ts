@@ -9,9 +9,10 @@ export const imageManifest: Record<string, string[]> = {
   "amanita-caesarea": [
     "01.jpg",
     "02.jpg",
-    "03.jpeg",
-    "04.jpeg",
-    "05.jpg"
+    "03.webp",
+    "04.webp",
+    "05.jpg",
+    "06.webp"
   ],
   "amanita-muscaria": [
     "01.jpg",
@@ -27,7 +28,7 @@ export const imageManifest: Record<string, string[]> = {
   "amanita-verna": [
     "01.jpg",
     "02.jpg",
-    "03.jpeg",
+    "03.jpg",
     "04.jpg",
     "05.jpg"
   ],
@@ -40,15 +41,15 @@ export const imageManifest: Record<string, string[]> = {
     "06.webp"
   ],
   "armillaria-mellea": [
-    "01.jpeg",
+    "01.jpg",
     "02.jpg",
     "03.jpg",
-    "04.jpeg",
+    "04.jpg",
     "05.jpg",
     "06.jpg"
   ],
   "boletus-aereus": [
-    "01.jpeg",
+    "01.jpg",
     "02.jpg",
     "03.jpeg",
     "04.jpg",
@@ -67,40 +68,39 @@ export const imageManifest: Record<string, string[]> = {
   "boletus-satanas": [
     "01.jpg",
     "02.jpg",
-    "03.jpeg",
-    "04.jpeg",
+    "03.jpg",
+    "04.jpg",
     "05.jpg"
   ],
   "calocybe-gambosa": [
-    "01.jpeg",
+    "01.webp",
     "02.jpg",
-    "03.jpeg",
-    "04.jpeg"
+    "03.jpg",
+    "04.jpg"
   ],
   "cantharellus-cibarius": [
     "01.webp",
-    "02.jpeg",
+    "02.jpg",
     "03.jpg",
-    "04.jpeg"
+    "04.webp"
   ],
   "clitocybe-nebularis": [
     "01.jpg",
     "02.jpg",
-    "03.jpeg",
+    "03.jpg",
     "04.jpg",
-    "05.jpeg",
-    "05.jpg"
+    "05.jpg",
+    "06.jpg"
   ],
   "coprinus-comatus": [
     "01.jpg",
     "02.jpg",
     "03.jpg",
-    "04.jpeg",
-    "05.jpg",
-    "06.webp"
+    "04.jpg",
+    "05.webp"
   ],
   "craterellus-cornucopioides": [
-    "01.jpeg",
+    "01.webp",
     "02.jpg",
     "03.jpg",
     "04.jpg"
