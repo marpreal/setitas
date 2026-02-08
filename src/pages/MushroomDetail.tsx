@@ -1,17 +1,27 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getMushroomById } from "../data/mushrooms";
+
+const SWIPE_THRESHOLD = 50;
 
 export default function MushroomDetail() {
   const params = useParams();
   const id = typeof params.id === "string" ? params.id : "";
   const mushroom = getMushroomById(id);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const touchStartX = useRef<number>(0);
+  const didSwipe = useRef(false);
   const imagenes = mushroom?.imagenes ?? [];
   const currentImg = lightboxIndex !== null && imagenes[lightboxIndex] ? imagenes[lightboxIndex] : null;
 
   const openLightbox = useCallback((index: number) => setLightboxIndex(index), []);
-  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+  const closeLightbox = useCallback(() => {
+    if (didSwipe.current) {
+      didSwipe.current = false;
+      return;
+    }
+    setLightboxIndex(null);
+  }, []);
 
   const goPrev = useCallback(() => {
     setLightboxIndex((i) => (i === null ? null : i <= 0 ? imagenes.length - 1 : i - 1));
@@ -19,6 +29,29 @@ export default function MushroomDetail() {
   const goNext = useCallback(() => {
     setLightboxIndex((i) => (i === null ? null : i >= imagenes.length - 1 ? 0 : i + 1));
   }, [imagenes.length]);
+
+  const handleLightboxTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    didSwipe.current = false;
+  }, []);
+
+  const handleLightboxTouchEnd = useCallback(
+    (e: React.TouchEvent) => {
+      if (imagenes.length <= 1) return;
+      const endX = e.changedTouches[0].clientX;
+      const delta = endX - touchStartX.current;
+      if (delta > SWIPE_THRESHOLD) {
+        didSwipe.current = true;
+        goPrev();
+        setTimeout(() => { didSwipe.current = false; }, 400);
+      } else if (delta < -SWIPE_THRESHOLD) {
+        didSwipe.current = true;
+        goNext();
+        setTimeout(() => { didSwipe.current = false; }, 400);
+      }
+    },
+    [imagenes.length, goPrev, goNext]
+  );
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -149,6 +182,8 @@ export default function MushroomDetail() {
         <div
           className="lightbox"
           onClick={closeLightbox}
+          onTouchStart={handleLightboxTouchStart}
+          onTouchEnd={handleLightboxTouchEnd}
           role="dialog"
           aria-modal="true"
           aria-label="Imagen ampliada"
@@ -167,6 +202,7 @@ export default function MushroomDetail() {
               <span className="lightboxCounter" onClick={(e) => e.stopPropagation()}>
                 {lightboxIndex + 1} / {imagenes.length}
               </span>
+              <span className="lightboxSwipeHint" aria-hidden>Desliza para cambiar</span>
             </>
           )}
           <img
@@ -174,6 +210,7 @@ export default function MushroomDetail() {
             alt={currentImg.alt}
             onClick={(e) => e.stopPropagation()}
             className="lightboxImg"
+            draggable={false}
           />
         </div>
       )}
