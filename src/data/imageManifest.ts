@@ -25,6 +25,13 @@ export const imageManifest: Record<string, string[]> = {
     "03.jpg",
     "04.webp"
   ],
+  "amanita-rubescens": [
+    "01.jpg",
+    "02.jpg",
+    "03.jpg",
+    "04.jpg",
+    "05.jpg"
+  ],
   "amanita-verna": [
     "01.jpg",
     "02.jpg",
