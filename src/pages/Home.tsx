@@ -158,7 +158,7 @@ function MushroomCard({ mushroom }: { mushroom: Mushroom }) {
   const cover = mushroom.imagenes[0];
 
   return (
-    <article className="card">
+    <Link to={`/seta/${mushroom.id}`} className="card cardLinkWrap" aria-label={`Ver ficha de ${mushroom.nombreComun}`}>
       <div className="coverWrap">
         {cover ? (
           <img className="cover" src={cover.src} alt={cover.alt} loading="lazy" />
@@ -180,10 +180,7 @@ function MushroomCard({ mushroom }: { mushroom: Mushroom }) {
           ))}
         </div>
         <p className="small">{mushroom.descripcionCorta}</p>
-        <Link to={`/seta/${mushroom.id}`} className="cardLink" aria-label={`Ver ficha de ${mushroom.nombreComun}`}>
-          Ver ficha →
-        </Link>
       </div>
-    </article>
+    </Link>
   );
 }
