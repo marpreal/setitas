@@ -1,10 +1,61 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { COMESTIBILIDAD_OPTIONS, getMushrooms } from "../data/mushrooms";
 
 type QuizMode = "nombre" | "cientifico" | "comestible";
 
-const QUESTIONS_PER_ROUND = 5;
+const STORAGE_KEY_LEVEL = "setitas-quiz-level";
+const STORAGE_KEY_HISTORY = "setitas-quiz-history";
+const MAX_HISTORY = 50;
+const HISTORY_DISPLAY = 12;
+
+type QuizLevel = 1 | 2 | 3;
+
+const QUESTIONS_BY_LEVEL: Record<QuizLevel, number> = { 1: 5, 2: 7, 3: 10 };
+const OPTIONS_BY_LEVEL: Record<QuizLevel, number> = { 1: 4, 2: 5, 3: 5 };
+
+export type QuizHistoryEntry = {
+  mode: QuizMode;
+  level: QuizLevel;
+  score: number;
+  total: number;
+  date: string;
+};
+
+function getStoredLevel(mode: QuizMode): QuizLevel {
+  try {
+    const raw = localStorage.getItem(`${STORAGE_KEY_LEVEL}-${mode}`);
+    const n = raw ? parseInt(raw, 10) : 1;
+    if (n >= 1 && n <= 3) return n as QuizLevel;
+  } catch (_) {}
+  return 1;
+}
+
+function setStoredLevel(mode: QuizMode, level: QuizLevel): void {
+  try {
+    localStorage.setItem(`${STORAGE_KEY_LEVEL}-${mode}`, String(level));
+  } catch (_) {}
+}
+
+function getQuizHistory(): QuizHistoryEntry[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_HISTORY);
+    if (!raw) return [];
+    const arr = JSON.parse(raw) as QuizHistoryEntry[];
+    return Array.isArray(arr) ? arr : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+function addQuizResult(entry: QuizHistoryEntry): void {
+  const history = getQuizHistory();
+  history.unshift(entry);
+  const trimmed = history.slice(0, MAX_HISTORY);
+  try {
+    localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(trimmed));
+  } catch (_) {}
+}
 
 function shuffle<T>(arr: T[]): T[] {
   const out = [...arr];
@@ -19,6 +70,12 @@ function pickRandom<T>(arr: T[], n: number): T[] {
   return shuffle(arr).slice(0, n);
 }
 
+const MODE_LABELS: Record<QuizMode, string> = {
+  nombre: "¿Cómo se llama?",
+  cientifico: "¿Nombre científico?",
+  comestible: "¿Es comestible?",
+};
+
 export default function Quiz() {
   const mushrooms = useMemo(() => getMushrooms(), []);
   const withImages = useMemo(
@@ -27,31 +84,58 @@ export default function Quiz() {
   );
 
   const [mode, setMode] = useState<QuizMode | null>(null);
+  const [level, setLevel] = useState<QuizLevel>(1);
   const [roundStarted, setRoundStarted] = useState(false);
   const [questionIndex, setQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [selected, setSelected] = useState<string | null>(null);
   const [revealed, setRevealed] = useState(false);
+  const [history, setHistory] = useState<QuizHistoryEntry[]>([]);
+  const savedThisRound = useRef(false);
+
+  useEffect(() => {
+    setHistory(getQuizHistory());
+  }, [roundStarted, mode]);
+
+  useEffect(() => {
+    if (!roundStarted) savedThisRound.current = false;
+  }, [roundStarted]);
 
   const pool = mode === "comestible" ? mushrooms : withImages;
-  const canStart = pool.length >= 4;
+  const canStart = pool.length >= 5;
+
+  const questionsPerRound = mode ? QUESTIONS_BY_LEVEL[level] : 5;
+  const numOptions = mode && (mode === "nombre" || mode === "cientifico")
+    ? OPTIONS_BY_LEVEL[level]
+    : 4;
 
   const questions = useMemo(() => {
     if (!mode || pool.length < 2) return [];
-    const count = Math.min(QUESTIONS_PER_ROUND, pool.length);
+    const count = Math.min(questionsPerRound, pool.length);
     return shuffle(pool).slice(0, count);
-  }, [mode, pool]);
+  }, [mode, pool, questionsPerRound]);
 
   const current = questions[questionIndex];
   const isLastQuestion = questionIndex === questions.length - 1;
 
+  // Guardar resultado al terminar la ronda (aunque no pulse "Jugar de nuevo")
+  useEffect(() => {
+    if (revealed && isLastQuestion && mode && questions.length > 0 && !savedThisRound.current) {
+      savedThisRound.current = true;
+      addQuizResult({ mode, level, score, total: questions.length, date: new Date().toISOString() });
+      setHistory(getQuizHistory());
+      if (score === questions.length && level < 3) setStoredLevel(mode, (level + 1) as QuizLevel);
+    }
+  }, [revealed, isLastQuestion, mode, level, score, questions.length]);
+
   const questionData = useMemo(() => {
     if (!current || !mode) return null;
     const correct = current;
+    const othersCount = Math.min(numOptions - 1, pool.length - 1);
     if (mode === "nombre") {
       const others = pickRandom(
         pool.filter((m) => m.id !== correct.id),
-        Math.min(3, pool.length - 1)
+        othersCount
       );
       const options = shuffle([correct.nombreComun, ...others.map((m) => m.nombreComun)]);
       return {
@@ -64,7 +148,7 @@ export default function Quiz() {
     if (mode === "cientifico") {
       const others = pickRandom(
         pool.filter((m) => m.id !== correct.id),
-        Math.min(3, pool.length - 1)
+        othersCount
       );
       const options = shuffle([
         correct.nombreCientifico,
@@ -90,7 +174,7 @@ export default function Quiz() {
       };
     }
     return null;
-  }, [current, mode, pool]);
+  }, [current, mode, pool, numOptions]);
 
   const handleAnswer = useCallback(
     (value: string) => {
@@ -118,13 +202,27 @@ export default function Quiz() {
   }, []);
 
   const startRound = useCallback((m: QuizMode) => {
+    const storedLevel = getStoredLevel(m);
     setMode(m);
+    setLevel(storedLevel);
     setRoundStarted(true);
     setQuestionIndex(0);
     setScore(0);
     setSelected(null);
     setRevealed(false);
   }, []);
+
+  const formatHistoryDate = (dateIso: string) => {
+    try {
+      const d = new Date(dateIso);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) return d.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+      return d.toLocaleDateString("es-ES", { day: "numeric", month: "short" });
+    } catch (_) {
+      return "";
+    }
+  };
 
   if (!roundStarted) {
     return (
@@ -134,44 +232,54 @@ export default function Quiz() {
         </Link>
         <h1 className="h1">Quiz de setas</h1>
         <p className="lead">
-          Elige un modo y responde {QUESTIONS_PER_ROUND} preguntas. Solo se usan setas que tienen fotos (salvo en «¿Es comestible?»).
+          Elige un modo y responde. Cada modo tiene nivel 1 → 2 → 3 (más preguntas y opciones). Si aciertas todas, se desbloquea el siguiente nivel.
         </p>
         <div className="quizModes">
-          <button
-            type="button"
-            className="quizModeCard"
-            onClick={() => startRound("nombre")}
-            disabled={!canStart}
-          >
-            <span className="quizModeEmoji" aria-hidden>🖼️</span>
-            <h2 className="h2">¿Cómo se llama?</h2>
-            <p className="small">Ves una foto y eliges el nombre común correcto.</p>
-          </button>
-          <button
-            type="button"
-            className="quizModeCard"
-            onClick={() => startRound("cientifico")}
-            disabled={!canStart}
-          >
-            <span className="quizModeEmoji" aria-hidden>🔬</span>
-            <h2 className="h2">¿Nombre científico?</h2>
-            <p className="small">Ves una foto y eliges el nombre científico correcto.</p>
-          </button>
-          <button
-            type="button"
-            className="quizModeCard"
-            onClick={() => startRound("comestible")}
-            disabled={mushrooms.length < 2}
-          >
-            <span className="quizModeEmoji" aria-hidden>🍽️</span>
-            <h2 className="h2">¿Es comestible?</h2>
-            <p className="small">Ves nombre y foto y eliges si es comestible, tóxica, etc.</p>
-          </button>
+          {(["nombre", "cientifico", "comestible"] as const).map((m) => {
+            const currentLevel = getStoredLevel(m);
+            const label = MODE_LABELS[m];
+            const disabled = m === "comestible" ? mushrooms.length < 2 : !canStart;
+            return (
+              <button
+                key={m}
+                type="button"
+                className="quizModeCard"
+                onClick={() => startRound(m)}
+                disabled={disabled}
+              >
+                <span className="quizModeEmoji" aria-hidden>
+                  {m === "nombre" ? "🖼️" : m === "cientifico" ? "🔬" : "🍽️"}
+                </span>
+                <h2 className="h2">{label}</h2>
+                <p className="small">
+                  Nivel {currentLevel} · {QUESTIONS_BY_LEVEL[currentLevel]} preguntas
+                  {(m === "nombre" || m === "cientifico") && ` · ${OPTIONS_BY_LEVEL[currentLevel]} opciones`}
+                </p>
+              </button>
+            );
+          })}
         </div>
         {!canStart && (
           <p className="small" style={{ marginTop: 16 }}>
             Añade fotos en <code>public/images/&lt;id&gt;/</code> para poder jugar a los modos con foto.
           </p>
+        )}
+
+        {history.length > 0 && (
+          <section className="section quizHistorySection" aria-label="Historial del quiz">
+            <h2 className="h2">Tu historial</h2>
+            <p className="small">Últimos resultados (se guardan en este navegador):</p>
+            <ul className="quizHistoryList">
+              {history.slice(0, HISTORY_DISPLAY).map((entry, i) => (
+                <li key={`${entry.date}-${i}`} className="quizHistoryItem">
+                  <span className="quizHistoryMode">{MODE_LABELS[entry.mode]}</span>
+                  <span className="quizHistoryLevel">N{entry.level}</span>
+                  <span className="quizHistoryScore">{entry.score}/{entry.total}</span>
+                  <span className="quizHistoryDate">{formatHistoryDate(entry.date)}</span>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
       </div>
     );
@@ -197,7 +305,7 @@ export default function Quiz() {
       <div className="quizHeader">
         <Link to="/" className="backLink quizBack">← Salir</Link>
         <span className="quizProgress">
-          Pregunta {questionIndex + 1} / {questions.length} · Aciertos: {score}
+          Pregunta {questionIndex + 1} / {questions.length} · Aciertos: {score} · Nivel {level}
         </span>
       </div>
 
@@ -267,6 +375,12 @@ export default function Quiz() {
       {revealed && isLastQuestion && (
         <div className="quizFinalScore">
           <p className="h2">Resultado: {score} / {questions.length} aciertos</p>
+          {score === questions.length && level < 3 && (
+            <p className="quizLevelUp">¡Nivel superado! La próxima vez este modo tendrá más preguntas (nivel {level + 1}).</p>
+          )}
+          {score === questions.length && level === 3 && (
+            <p className="quizLevelUp">¡Nivel máximo! Perfecto.</p>
+          )}
           <button type="button" className="quizRestart" onClick={handlePlayAgain}>
             Jugar de nuevo
           </button>

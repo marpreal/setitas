@@ -166,6 +166,67 @@ input:focus, select:focus {
   input:focus, select:focus { outline-color: #6b9b7a; }
 }
 
+/* Setas de temporada - carrusel arrastrable; se ve un poco la siguiente para indicar que se puede desplazar */
+.temporadaSection { margin-top: 20px; }
+.temporadaTitle { margin-bottom: 4px; }
+.temporadaLead { margin: 0 0 12px; color: var(--muted); }
+.temporadaCarouselWrap {
+  position: relative;
+  margin-top: 8px;
+  --temporada-card-w: 280px;
+  --temporada-gap: 16px;
+  --temporada-step: calc(var(--temporada-card-w) + var(--temporada-gap));
+  --temporada-peek: 56px;
+}
+.temporadaCarouselViewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  cursor: grab;
+  scroll-behavior: smooth;
+}
+.temporadaCarouselViewport::-webkit-scrollbar { display: none; }
+.temporadaCarouselViewport--dragging { cursor: grabbing; scroll-snap-type: none; }
+.temporadaCarouselViewport--dragging .temporadaCarouselCard { pointer-events: none; }
+.temporadaCarouselTrack {
+  display: flex;
+  gap: var(--temporada-gap);
+  padding: 4px 0;
+}
+.temporadaCarouselCard {
+  flex: 0 0 auto;
+  width: var(--temporada-card-w);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+.temporadaCarouselCard .card { height: 100%; }
+.temporadaCarouselCard .cardLinkWrap { height: 100%; display: flex; flex-direction: column; pointer-events: auto; }
+.temporadaCarouselCard .cardBody { flex: 1; }
+/* Se ve 1 tarjeta + un poco de la siguiente en móvil (sin centrar); 2+peek / 3+peek en desktop (centrado) */
+.temporadaCarouselViewport {
+  max-width: calc(var(--temporada-step) * 1 + var(--temporada-peek));
+}
+@media (min-width: 620px) {
+  .temporadaCarouselViewport {
+    max-width: calc(var(--temporada-step) * 2 + var(--temporada-peek));
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+@media (min-width: 920px) {
+  .temporadaCarouselViewport { max-width: calc(var(--temporada-step) * 3 + var(--temporada-peek)); }
+}
+@media (max-width: 480px) {
+  .temporadaCarouselWrap {
+    --temporada-card-w: min(280px, 82vw);
+    --temporada-peek: 40px;
+  }
+}
+.temporadaHint { margin: 8px 0 0; color: var(--muted); font-size: 0.85rem; text-align: center; }
+
 /* Cards grid */
 .grid {
   display: grid;
@@ -441,6 +502,16 @@ input:focus, select:focus {
 }
 .confusionesList { margin: 8px 0 0; padding-left: 1.25rem; }
 .confusionesList li { margin-bottom: 8px; line-height: 1.45; }
+.confusionesItemConFotos { margin-bottom: 14px; list-style: none; margin-left: -1.25rem; }
+.confusionesItemConFotos:last-child { margin-bottom: 0; }
+.confusionesItemText { margin-bottom: 6px; }
+.confusionesItemLink { font-weight: 500; text-decoration: underline; }
+.confusionesItemLink:hover { text-underline-offset: 2px; }
+.confusionesItemNombre { font-size: 0.9rem; color: var(--muted); }
+.confusionesFotos { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.confusionesFotoLink { display: block; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); width: 80px; flex-shrink: 0; transition: border-color 0.2s, box-shadow 0.2s; }
+.confusionesFotoLink:hover { border-color: #4a7c59; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+.confusionesFoto { width: 80px; height: 60px; object-fit: cover; display: block; }
 
 .nombresEspana { background: color-mix(in oklab, currentColor 4%, transparent); border-radius: var(--radius); padding: 16px; }
 .nombresList { margin: 10px 0 0; padding-left: 1.25rem; display: flex; flex-wrap: wrap; gap: 8px 1rem; list-style: none; }
@@ -606,3 +677,20 @@ hr.sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
   .quizRestart { background: color-mix(in oklab, #6b9b7a 35%, transparent); color: #c8ecd4; }
   .quizRestart:hover { background: color-mix(in oklab, #6b9b7a 50%, transparent); color: #c8ecd4; }
 }
+.quizLevelUp { margin: 0 0 12px; font-size: 0.95rem; color: var(--muted); }
+.quizHistorySection { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--border); }
+.quizHistoryList { list-style: none; padding: 0; margin: 10px 0 0; display: flex; flex-direction: column; gap: 6px; }
+.quizHistoryItem {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: color-mix(in oklab, currentColor 5%, transparent);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+.quizHistoryMode { font-weight: 500; }
+.quizHistoryLevel { font-size: 0.8rem; color: var(--muted); }
+.quizHistoryScore { font-weight: 600; }
+.quizHistoryDate { font-size: 0.8rem; color: var(--muted); justify-self: end; }

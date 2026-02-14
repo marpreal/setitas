@@ -220,9 +220,39 @@ export default function MushroomDetail() {
         <section className="section confusiones" aria-label="No confundir con">
           <h2 className="h2">No confundir con</h2>
           <ul className="confusionesList">
-            {mushroom.confusiones.map((c, i) => (
-              <li key={i}>{c}</li>
-            ))}
+            {mushroom.confusiones.map((c, i) => {
+              if (typeof c === "string") {
+                return <li key={i}>{c}</li>;
+              }
+              const otra = getMushroomById(c.id);
+              const fotos = otra?.imagenes?.slice(0, 2) ?? [];
+              return (
+                <li key={i} className="confusionesItemConFotos">
+                  <div className="confusionesItemText">
+                    <Link to={`/seta/${c.id}`} className="confusionesItemLink">
+                      {c.texto}
+                    </Link>
+                    {otra && (
+                      <span className="confusionesItemNombre"> → {otra.nombreComun}</span>
+                    )}
+                  </div>
+                  {fotos.length > 0 && (
+                    <div className="confusionesFotos">
+                      {fotos.map((img, j) => (
+                        <Link
+                          key={j}
+                          to={`/seta/${c.id}`}
+                          className="confusionesFotoLink"
+                          aria-label={`Ver ficha de ${otra?.nombreComun}`}
+                        >
+                          <img src={img.src} alt={img.alt} className="confusionesFoto" />
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         </section>
       )}

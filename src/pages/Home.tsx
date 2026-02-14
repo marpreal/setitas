@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   CALIDAD_CULINARIA_OPTIONS,
@@ -23,6 +23,17 @@ function normalize(s: string) {
 
 function uniqueSorted(values: string[]) {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b, "es-ES"));
+}
+
+const MES_A_EPOCA: Record<number, string> = {
+  0: "invierno", 1: "invierno", 2: "invierno",
+  3: "primavera", 4: "primavera", 5: "primavera",
+  6: "verano", 7: "verano", 8: "verano",
+  9: "otoño", 10: "otoño", 11: "otoño",
+};
+
+function getEpocaActual(): string {
+  return MES_A_EPOCA[new Date().getMonth()] ?? "otoño";
 }
 
 export default function Home() {
@@ -78,10 +89,111 @@ export default function Home() {
     });
   }, [mushrooms, filters.q, filters.habitat, filters.epoca, safeComestibilidad, safeCalidad]);
 
+  const epocaActual = getEpocaActual();
+  const setasTemporada = useMemo(() => {
+    return mushrooms.filter(
+      (m) =>
+        m.comestibilidad === "comestible" &&
+        (m.epoca.some((e) => normalize(e) === epocaActual) || m.epoca.some((e) => normalize(e) === "todo el año"))
+    );
+  }, [mushrooms, epocaActual]);
+
+  const carouselViewportRef = useRef<HTMLDivElement>(null);
+  const carouselCardRef = useRef<HTMLDivElement>(null);
+  const [carouselDragging, setCarouselDragging] = useState(false);
+  const dragStartX = useRef(0);
+  const dragStartScroll = useRef(0);
+  const didDragRef = useRef(false);
+
+  const getScrollStep = useCallback(() => {
+    const card = carouselCardRef.current;
+    if (!card) return 296;
+    return card.offsetWidth + 16;
+  }, []);
+
+  const onCarouselMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!carouselViewportRef.current) return;
+    e.preventDefault();
+    didDragRef.current = false;
+    setCarouselDragging(true);
+    dragStartX.current = e.clientX;
+    dragStartScroll.current = carouselViewportRef.current.scrollLeft;
+  }, []);
+
+  const onCarouselMouseMove = useCallback((e: MouseEvent) => {
+    if (!carouselDragging || !carouselViewportRef.current) return;
+    const dx = dragStartX.current - e.clientX;
+    if (Math.abs(dx) > 5) didDragRef.current = true;
+    carouselViewportRef.current.scrollLeft = dragStartScroll.current + dx;
+  }, [carouselDragging]);
+
+  const onCarouselMouseUp = useCallback(() => {
+    if (!carouselDragging) return;
+    setCarouselDragging(false);
+    const el = carouselViewportRef.current;
+    if (!el) return;
+    const step = getScrollStep();
+    const left = el.scrollLeft;
+    const snapped = Math.round(left / step) * step;
+    el.scrollTo({ left: Math.max(0, Math.min(snapped, el.scrollWidth - el.clientWidth)), behavior: "smooth" });
+  }, [carouselDragging, getScrollStep]);
+
+  const onCarouselViewportClick = useCallback((e: React.MouseEvent) => {
+    if (didDragRef.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      didDragRef.current = false;
+      setTimeout(() => { didDragRef.current = false; }, 0);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!carouselDragging) return;
+    window.addEventListener("mousemove", onCarouselMouseMove);
+    window.addEventListener("mouseup", onCarouselMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onCarouselMouseMove);
+      window.removeEventListener("mouseup", onCarouselMouseUp);
+    };
+  }, [carouselDragging, onCarouselMouseMove, onCarouselMouseUp]);
+
   return (
     <div className="pageHome">
       <h1 className="h1">Catálogo</h1>
       <p className="small">Busca por nombre y filtra por comestibilidad, hábitat y época.</p>
+
+      {setasTemporada.length > 0 && (
+        <section className="section temporadaSection" aria-label="Setas de temporada">
+          <h2 className="h2 temporadaTitle">Setas de temporada ({epocaActual})</h2>
+          <p className="small temporadaLead">Comestibles que suelen encontrarse en esta época.</p>
+          <div className="temporadaCarouselWrap">
+            <div
+              ref={carouselViewportRef}
+              className={`temporadaCarouselViewport ${carouselDragging ? "temporadaCarouselViewport--dragging" : ""}`}
+              onMouseDown={setasTemporada.length > 1 ? onCarouselMouseDown : undefined}
+              onClick={setasTemporada.length > 1 ? onCarouselViewportClick : undefined}
+              role="region"
+              aria-label="Carrusel setas de temporada"
+            >
+              <div className="temporadaCarouselTrack">
+                {setasTemporada.map((m, i) => (
+                  <div
+                    key={m.id}
+                    ref={i === 0 ? carouselCardRef : undefined}
+                    className="temporadaCarouselCard"
+                  >
+                    <MushroomCard mushroom={m} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          {setasTemporada.length > 1 && (
+            <p className="small temporadaHint" aria-hidden>Arrastra con el ratón para ver más</p>
+          )}
+          <hr className="sep" />
+        </section>
+      )}
 
       <form
         className="controls"
