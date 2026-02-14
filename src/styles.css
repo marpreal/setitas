@@ -461,6 +461,11 @@ input:focus, select:focus {
 
 hr.sep { border: none; border-top: 1px solid var(--border); margin: 16px 0; }
 
+.masInfoSection { background: color-mix(in oklab, currentColor 4%, transparent); border-radius: var(--radius); padding: 16px; }
+.masInfoContent { margin-top: 8px; }
+.masInfoP { margin: 0 0 10px; line-height: 1.5; color: var(--muted); font-size: 0.95rem; }
+.masInfoP:last-child { margin-bottom: 0; }
+
 /* Quiz */
 .pageQuiz { padding: 8px 0 32px; }
 .quizModes {

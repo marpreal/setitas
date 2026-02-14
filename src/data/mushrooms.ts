@@ -30,6 +30,8 @@ export type Mushroom = {
   propiedades?: string[];
   confusiones?: string[];
   precauciones?: string[];
+  /** Texto libre adicional por seta (párrafos o notas) */
+  masInfo?: string[];
   imagenes: Array<{ src: string; alt: string }>;
 };
 
@@ -75,6 +77,10 @@ export const MUSHROOMS: Mushroom[] = [
     propiedades: ["Una de las setas más apreciadas del mundo. Aroma avellanado y dulce.", "Carne compacta y tierna.", "Rico en proteínas, fibra, vitaminas B y D.", "Bajo en calorías. Se conserva muy bien seca."],
     confusiones: ["Boletus satanas (tóxico, pie rojizo)", "Tylopilus felleus (amargo)"],
     precauciones: ["Asegura identificación. Evita ejemplares muy maduros."],
+    masInfo: [
+      "En Italia se conoce como porcini y es la seta reina de la cocina; la deshidratada concentra el sabor y se usa mucho en risottos y salsas.",
+      "Los ejemplares con poros muy abiertos o esponjosos están pasados; mejor recolectar sombreros firmes y poros blanquecinos o amarillentos.",
+    ],
     imagenes: [],
   },
   {
@@ -160,6 +166,10 @@ export const MUSHROOMS: Mushroom[] = [
     propiedades: ["Sabor suave. Solo consumir tras cocción suficiente.", "La toxina termolábil se destruye con el calor; cruda o poco hecha puede causar molestias."],
     confusiones: ["Amanita pantherina (tóxica, no enrojece)", "Amanita muscaria (tóxica, sombrero rojo con verrugas)", "Otras amanitas: la rubescencia es clave"],
     precauciones: ["Identificación segura. Debe cocinarse bien; nunca consumir cruda o semicruda."],
+    masInfo: [
+      "La rubescencia (enrojecimiento de la carne al corte o al roce) puede tardar unos minutos en aparecer; no confundir con amanitas que no enrojecen.",
+      "Algunas guías recomiendan desechar el pie y consumir solo el sombrero, y usar siempre ejemplares jóvenes y firmes.",
+    ],
     imagenes: [],
   },
   {

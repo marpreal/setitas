@@ -255,6 +255,17 @@ export default function MushroomDetail() {
           </ul>
         </section>
       )}
+
+      {mushroom.masInfo && mushroom.masInfo.length > 0 && (
+        <section className="section masInfoSection" aria-label="Más información">
+          <h2 className="h2">Más información</h2>
+          <div className="masInfoContent">
+            {mushroom.masInfo.map((texto, i) => (
+              <p key={i} className="masInfoP">{texto}</p>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
